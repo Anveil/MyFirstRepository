@@ -89,7 +89,7 @@ void GetFreeSpace(FRESULT res,FATFS *fs)
     fre_sect = fre_clust * fs->csize;
 
     /* Print the free space (assuming 512 bytes/sector) */
-    printf("总容量:  %10lu KB\n可用容量:  %10lu KB\n已用容量: %u KB\n", tot_sect / 2, fre_sect / 2, tot_sect / 2-fre_sect / 2);
+    printf("可用容量:  %u KB\t已用容量: %u KB\n",fre_sect / 2, tot_sect / 2-fre_sect / 2);
             
 }
             
@@ -97,7 +97,29 @@ void GetFreeSpace(FRESULT res,FATFS *fs)
 
 
 
+void GetTimeAndDateString(u8 *namebuf)
+{
+    RTC_TimeTypeDef RTC_TimeStructure;
+    RTC_DateTypeDef RTC_DateStructure;
+    char TimeTemp[20],DateTemp[20];
+    
+    /*获取当前日期时间*/
+    RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
+    sprintf(DateTemp,"20%0.2d-%0.2d-%0.2d", 
+        RTC_DateStructure.RTC_Year,
+        RTC_DateStructure.RTC_Month, 
+        RTC_DateStructure.RTC_Date);
 
+    //void RTC_GetTime(uint32_t RTC_Format, RTC_TimeTypeDef* RTC_TimeStruct)
+    RTC_GetTime(RTC_Format_BIN,&RTC_TimeStructure);
+    sprintf(TimeTemp,"%0.2d-%0.2d-%0.2d", 
+        RTC_TimeStructure.RTC_Hours, 
+        RTC_TimeStructure.RTC_Minutes, 
+        RTC_TimeStructure.RTC_Seconds);
+
+    sprintf((char *)namebuf,"%s.%s(%d).jpg",DateTemp,TimeTemp,jpg_cnt++);
+    puts((char *)namebuf);
+}
 
 
 
@@ -113,10 +135,9 @@ void JPEG_Save()
     u32 i,jpgstart,jpglen; 
     u8 *p;
     u8 headok=0;
-    u8 name_buf[50];
-    char TimeTemp[20],DateTemp[20];
-    RTC_TimeTypeDef RTC_TimeStructure;
-    RTC_DateTypeDef RTC_DateStructure;
+    u8 namebuf[50];
+    
+    
     
     OV2640_JPEG_Mode();		//JPEG模式
     My_DCMI_Init();			//DCMI配置
@@ -138,7 +159,7 @@ void JPEG_Save()
             
             GetFreeSpace(res_sd,fs);
 
-            if((tot_sect/2-fre_sect/2)>50000)        //判断容量是否足
+            if((tot_sect/2-fre_sect/2)>1048576)        //判断容量是否足
             {
                 printf("容量不足,需要删除\n");
                 FindOldestFile(fs,"0:");
@@ -147,22 +168,7 @@ void JPEG_Save()
             
             
 
-            /*获取当前日期时间*/
-            RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
-            sprintf(DateTemp,"20%0.2d-%0.2d-%0.2d", 
-                RTC_DateStructure.RTC_Year,
-                RTC_DateStructure.RTC_Month, 
-                RTC_DateStructure.RTC_Date);
-            
-            //void RTC_GetTime(uint32_t RTC_Format, RTC_TimeTypeDef* RTC_TimeStruct)
-            RTC_GetTime(RTC_Format_BIN,&RTC_TimeStructure);
-            sprintf(TimeTemp,"%0.2d-%0.2d-%0.2d", 
-                RTC_TimeStructure.RTC_Hours, 
-                RTC_TimeStructure.RTC_Minutes, 
-                RTC_TimeStructure.RTC_Seconds);
-            
-            sprintf((char *)name_buf,"%s.%s(%d).jpg",DateTemp,TimeTemp,jpg_cnt++);
-            puts((char *)name_buf);
+            GetTimeAndDateString(namebuf);
             
             /*找头尾，记录长度*/
             jpglen=0;	//设置jpg文件大小为0
@@ -186,15 +192,15 @@ void JPEG_Save()
             if(jpglen)	//正常的jpeg数据
             {
 //                printf("%d",jpglen);
-                res_sd = f_open(&fnew,(const TCHAR *)name_buf,FA_CREATE_ALWAYS | FA_WRITE);     //打开文件
+                res_sd = f_open(&fnew,(TCHAR *)namebuf,FA_CREATE_ALWAYS | FA_WRITE);     //打开文件
                 if ( res_sd == FR_OK )
                 {
-                    printf("》打开/创建测试图片成功\r\n");
+//                    printf("》打开/创建测试图片成功\r\n");
                 /* 将指定存储区内容写入到文件内 */
                     res_sd=f_write(&fnew,p,sizeof(u8)*jpglen,&fnum);
                     if(res_sd==FR_OK)
                     {
-                            printf("写入完成:(%d)\n",res_sd);
+//                            printf("写入完成:(%d)\n",res_sd);
                     }
                     else
                     {

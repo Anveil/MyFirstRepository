@@ -465,7 +465,7 @@ FRESULT FindOldestFile(FATFS *fs,TCHAR *path)
         sprintf((char*)filename, "%s%s/%s","删除文件:\n", path, (*fno.lfname) ? fno.lfname : fno.fname);
         puts(filename);
         f_unlink(file);
-        if((tot_sect/2-fre_sect/2)<30000)        //判断容量是否足够,
+        if((tot_sect/2-fre_sect/2)<1000000)        //判断容量是否足够,
         {
             printf("容量足够,继续存储\n");
             break;
@@ -486,7 +486,7 @@ FRESULT FindOldestFile(FATFS *fs,TCHAR *path)
 //输    出 : 无
 //备    注 : f_del_oldestfile 函数用来移除一个文件夹及其子文件夹、子文件，但不能移除已经打开的对象。 
 //====================================================================================================
-FRESULT f_del_oldestfile(TCHAR *path)
+FRESULT DeleteAllFiles(TCHAR *path)
 {
 	FATFS *fs;
     FRESULT res;
@@ -504,35 +504,20 @@ FRESULT f_del_oldestfile(TCHAR *path)
 #endif
     //打开文件夹
     res = f_opendir(&dir, path);
-    
-    
-    
+
     //持续读取文件夹内容
-    if((res == FR_OK) && (FR_OK == f_readdir(&dir, &fno)))
+    while((res == FR_OK) && (FR_OK == f_readdir(&dir, &fno)))
     {
+        if(0 == strlen(fno.fname))          break;      //若读到的文件名为空
         memset(file, 0, sizeof(file));
 #if _USE_LFN
         sprintf((char*)file, "%s/%s", path, (*fno.lfname) ? fno.lfname : fno.fname);
 #else
         sprintf((char*)file, "%s/%s", path, fno.fname);
 #endif
-        if(fno.lfname[0]=='2'&&fno.lfname[1]=='0')
-        {
-            sprintf((char*)filename, "%s%s/%s\n","删除文件:", path, (*fno.lfname) ? fno.lfname : fno.fname);
-            puts(filename);
-            f_unlink(file);
-			if((tot_sect/2-fre_sect/2)<10000)        //判断容量是否足够,不足时将sys_status置为DELETE_MODE
-			{
-				printf("容量足够,继续存储\n");
-			}
-        }
-        else
-        {
-            printf("非规格文件,直接删除\n");
-            f_unlink(file);
-        }
-        
-
+        sprintf((char*)filename, "%s%s/%s\n","删除文件:", path, (*fno.lfname) ? fno.lfname : fno.fname);
+        puts(filename);
+        f_unlink(file);
         
     }
     

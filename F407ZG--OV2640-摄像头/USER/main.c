@@ -80,14 +80,12 @@ int main(void)
     TIM3_Int_Init(10000 - 1, 84 - 1); //设置定时器的定时频率为10ms  1秒钟中断100次
     
     
-
-    
     if(res_sd == FR_NO_FILESYSTEM)  //初始化文件系统
     {
         printf("》即将进行格式化...\r\n");
         /* 格式化 */
-        res_sd=f_mkfs("0:",0,0);							
-        
+        							
+        res_sd=f_mkfs("0:",0,0);
         if(res_sd == FR_OK)
         {
             printf("》SD卡已成功格式化文件系统。\r\n");
@@ -121,7 +119,7 @@ int main(void)
     OV2640_LED_light=0;//打开补光LED
 //    FindOldestFile(fs,"0:");
     
-    
+    DeleteAllFiles("0:");
     JPEG_Save();
 //    while(1)
 //    {
