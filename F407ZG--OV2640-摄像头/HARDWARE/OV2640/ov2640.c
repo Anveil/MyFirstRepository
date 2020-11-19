@@ -43,7 +43,7 @@ u8 OV2640_Init(void)
   GPIO_Init(GPIOF, &GPIO_InitStructure);//初始化
 	
 	
-	OV2640_LED_light=0;//关闭补光LED
+	
 
 
 

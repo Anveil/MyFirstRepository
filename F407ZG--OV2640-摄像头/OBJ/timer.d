@@ -39,4 +39,8 @@
 ..\obj\timer.o: ..\HARDWARE\LED\led.h
 ..\obj\timer.o: ..\SYSTEM\usart\usart.h
 ..\obj\timer.o: E:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\timer.o: .\jpeg\jpeg.h
+..\obj\timer.o: .\FATFS\ff.h
+..\obj\timer.o: .\FATFS\integer.h
+..\obj\timer.o: .\FATFS\ffconf.h
 ..\obj\timer.o: ..\HARDWARE\KEY\key.h

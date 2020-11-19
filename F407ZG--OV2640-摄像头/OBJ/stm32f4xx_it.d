@@ -35,3 +35,6 @@
 ..\obj\stm32f4xx_it.o: ..\FWLIB\inc\stm32f4xx_dac.h
 ..\obj\stm32f4xx_it.o: ..\FWLIB\inc\stm32f4xx_dcmi.h
 ..\obj\stm32f4xx_it.o: ..\FWLIB\inc\stm32f4xx_fsmc.h
+..\obj\stm32f4xx_it.o: ..\SYSTEM\usart\usart.h
+..\obj\stm32f4xx_it.o: E:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\stm32f4xx_it.o: ..\SYSTEM\sys\sys.h

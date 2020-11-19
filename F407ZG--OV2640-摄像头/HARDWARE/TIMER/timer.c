@@ -1,6 +1,7 @@
 #include "timer.h"
 #include "led.h"
 #include "usart.h"
+#include "jpeg.h"
 #include "key.h"
 
 
@@ -59,6 +60,7 @@ void TIM3_IRQHandler(void)
 		if(TimeS>=100)
 		{
 			TimeS=0;
+            jpg_cnt=0;
 	  	LED1=!LED1;//DS1翻转
 			if(Com1SendFlag!=1)Com1SendFlag=1;  //设置串口定时发送标记
 		}

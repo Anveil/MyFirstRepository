@@ -23,6 +23,7 @@ void DCMI_IRQHandler(void)
 		JPEG_Data_Process(); 	//jpeg数据处理	
 		DCMI_ClearITPendingBit(DCMI_IT_FRAME);//清除帧中断
 		LED0=!LED0;
+        sys_status=PHOTO_MODE;
 		ov_frame++;  
 	}
 } 
@@ -106,7 +107,7 @@ void My_DCMI_Init(void)
 	GPIO_PinAFConfig(GPIOE,GPIO_PinSource5,GPIO_AF_DCMI); //PE5,AF13  DCMI_D6
 	GPIO_PinAFConfig(GPIOE,GPIO_PinSource6,GPIO_AF_DCMI); //PE6,AF13  DCMI_D7
     
-    GPIO_ResetBits(GPIOF,GPIO_Pin_8); //关闭闪光灯
+//    GPIO_ResetBits(GPIOF,GPIO_Pin_8); //关闭闪光灯
 
 	
 	DCMI_DeInit();//清除原来的设置 

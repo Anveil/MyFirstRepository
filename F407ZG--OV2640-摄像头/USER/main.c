@@ -20,14 +20,16 @@
 
 //D1闪烁说明DCMI_IRQHandler中断被触发，捕获到了图像
 
-u32 jpg_cnt=0;
+
+
+
 extern u8 ov_frame;  						//帧率
 extern uint8_t Key_Flag;//按键键值
 u8 Com1SendFlag;//串口1发送数据标记
 
 
 
-
+TCHAR sys_status=PHOTO_MODE;
 
 
 //0,数据没有采集完;
@@ -56,11 +58,11 @@ u8 Com1SendFlag;//串口1发送数据标记
 
 int main(void)
 {
-    FATFS fs;													/* FatFs文件系统对象 */
+
+    FATFS *fs;													/* FatFs文件系统对象 */
     FIL fnew;													/* 文件对象 */
     FRESULT res_sd;                /* 文件操作结果 */
     UINT fnum;            					  /* 文件成功读写数量 */
-    DIR dir;
     
     
 
@@ -70,19 +72,19 @@ int main(void)
     RTC_TimeInit();
     
 	uart_init(115200);		///初始化串口波特率为921600   使通信速度更快，PC软件才能更快的刷新图片，太慢的话，会异常
-
+    
     LED_Init();					//初始化LED
     KEY_Init();					//按键初始化
-    res_sd = f_mount(&fs,"0:",1);//挂载文件系统
-    
-    
-    
-		
+    res_sd = f_mount(fs,"0:",1);//挂载文件系统
+
     TIM3_Int_Init(10000 - 1, 84 - 1); //设置定时器的定时频率为10ms  1秒钟中断100次
+    
+    
+
     
     if(res_sd == FR_NO_FILESYSTEM)  //初始化文件系统
     {
-        printf("》SD卡还没有文件系统，即将进行格式化...\r\n");
+        printf("》即将进行格式化...\r\n");
         /* 格式化 */
         res_sd=f_mkfs("0:",0,0);							
         
@@ -92,7 +94,7 @@ int main(void)
             /* 格式化后，先取消挂载 */
             res_sd = f_mount(NULL,"0:",1);			
             /* 重新挂载	*/			
-            res_sd = f_mount(&fs,"0:",1);
+            res_sd = f_mount(fs,"0:",1);
         }
         else
         {
@@ -110,25 +112,32 @@ int main(void)
     {
         printf("》文件系统挂载成功，可以进行读写测试\r\n");
     }
-    while(1)
+        while(OV2640_Init())//初始化OV2640
     {
-            res_sd=f_opendir(&dir,"0:CAM"); //打开一个目录
-        if(res_sd==FR_NO_PATH)
-        {
-            res_sd=f_mkdir("0:CAM");
-            if(res_sd==FR_OK)
-                printf("%s\r\n","FR_EXIST");
-            
-            delay_ms(500);
-        }
+        printf("OV2640初始化失败");
     }
+	printf("OV2640初始化成功\n");
     
-//    f_deldir("0:");
-//    while(OV2640_Init())//初始化OV2640
+    OV2640_LED_light=0;//打开补光LED
+//    FindOldestFile(fs,"0:");
+    
+    
+    JPEG_Save();
+//    while(1)
 //    {
-//        printf("OV2640初始化失败");
+//        switch(sys_status)
+//        {
+//            case DELETE_MODE:
+//                f_del_oldestfile("0:");
+//                break;
+//            case PHOTO_MODE:
+//                
+//                break;
+//            default:
+//                printf("信号量错误");
+//                while(1);
+//        }
+//        
 //    }
-//	printf("OV2640初始化成功");
-	
-//	JPEG_Save(res_sd,fnew,fnum);
+    
 }

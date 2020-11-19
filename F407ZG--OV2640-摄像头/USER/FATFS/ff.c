@@ -20,7 +20,9 @@
 #include "diskio.h"		/* Declarations of disk I/O functions */
 #include "string.h"
 #include "stdio.h"
-
+#include "delay.h"
+#include "jpeg.h"
+#include "dcmi.h"
 
 /*--------------------------------------------------------------------------
 
@@ -429,6 +431,115 @@ typedef struct {
 #define	LLEF				0x40	/* Last long entry flag in LDIR_Ord */
 #define	DDEM				0xE5	/* Deleted directory entry mark at DIR_Name[0] */
 #define	RDDEM				0x05	/* Replacement of the character collides with DDEM */
+
+
+
+
+FRESULT FindOldestFile(FATFS *fs,TCHAR *path)
+{
+    FRESULT res;
+    DIR   dir;     /* 文件夹对象 */ //36  bytes
+    FILINFO fno;   /* 文件属性 */   //32  bytes
+    TCHAR file[_MAX_LFN + 2] = {0};
+    TCHAR filename[100];
+    
+#if _USE_LFN
+    TCHAR lname[_MAX_LFN + 2] = {0};
+#endif
+    
+#if _USE_LFN
+    fno.lfsize = _MAX_LFN;
+    fno.lfname = lname;    //必须赋初值
+#endif
+    res = f_opendir(&dir, path);
+    while((res == FR_OK) && (FR_OK == f_readdir(&dir, &fno)))
+    {
+        GetFreeSpaceNoPrint(res,fs);
+        if(0 == strlen(fno.fname))          break;      //若读到的文件名为空
+        memset(file, 0, sizeof(file));
+#if _USE_LFN
+        sprintf((char*)file, "%s/%s", path, (*fno.lfname) ? fno.lfname : fno.fname);
+#else
+        sprintf((char*)file, "%s/%s", path, fno.fname);
+#endif
+        sprintf((char*)filename, "%s%s/%s","删除文件:\n", path, (*fno.lfname) ? fno.lfname : fno.fname);
+        puts(filename);
+        f_unlink(file);
+        if((tot_sect/2-fre_sect/2)<30000)        //判断容量是否足够,
+        {
+            printf("容量足够,继续存储\n");
+            break;
+        }
+    }
+        
+    return res;
+}
+
+
+
+
+
+//====================================================================================================
+//函 数 名 : f_del_oldestfile
+//函数功能 : 
+//输    入 : 
+//输    出 : 无
+//备    注 : f_del_oldestfile 函数用来移除一个文件夹及其子文件夹、子文件，但不能移除已经打开的对象。 
+//====================================================================================================
+FRESULT f_del_oldestfile(TCHAR *path)
+{
+	FATFS *fs;
+    FRESULT res;
+    DIR   dir;     /* 文件夹对象 */ //36  bytes
+    FILINFO fno;   /* 文件属性 */   //32  bytes
+    TCHAR file[_MAX_LFN + 2] = {0};
+    TCHAR filename[100];
+#if _USE_LFN
+    TCHAR lname[_MAX_LFN + 2] = {0};
+#endif
+    
+#if _USE_LFN
+    fno.lfsize = _MAX_LFN;
+    fno.lfname = lname;    //必须赋初值
+#endif
+    //打开文件夹
+    res = f_opendir(&dir, path);
+    
+    
+    
+    //持续读取文件夹内容
+    if((res == FR_OK) && (FR_OK == f_readdir(&dir, &fno)))
+    {
+        memset(file, 0, sizeof(file));
+#if _USE_LFN
+        sprintf((char*)file, "%s/%s", path, (*fno.lfname) ? fno.lfname : fno.fname);
+#else
+        sprintf((char*)file, "%s/%s", path, fno.fname);
+#endif
+        if(fno.lfname[0]=='2'&&fno.lfname[1]=='0')
+        {
+            sprintf((char*)filename, "%s%s/%s\n","删除文件:", path, (*fno.lfname) ? fno.lfname : fno.fname);
+            puts(filename);
+            f_unlink(file);
+			if((tot_sect/2-fre_sect/2)<10000)        //判断容量是否足够,不足时将sys_status置为DELETE_MODE
+			{
+				printf("容量足够,继续存储\n");
+			}
+        }
+        else
+        {
+            printf("非规格文件,直接删除\n");
+            f_unlink(file);
+        }
+        
+
+        
+    }
+    
+    
+    return res;
+}
+
 
 
 

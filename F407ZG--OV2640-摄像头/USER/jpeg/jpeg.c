@@ -15,11 +15,16 @@
 
 #define jpeg_buf_size 31*1024  			//定义JPEG数据缓存jpeg_buf的大小(*4字节)
 
-__align(4) u32 jpeg_buf[jpeg_buf_size];	//JPEG数据缓存buf
 
+
+int jpg_cnt=0;
+
+__align(4) u32 jpeg_buf[jpeg_buf_size];	//JPEG数据缓存buf
+DWORD fre_clust, fre_sect, tot_sect;
 
 volatile u32 jpeg_data_len = 0; 			//buf中的JPEG有效数据长度
 volatile u8 jpeg_data_ok = 0;				//JPEG数据采集完成标志
+
 
 
 
@@ -50,19 +55,66 @@ void JPEG_Data_Process(void)
 }
 
 
+void GetFreeSpaceNoPrint(FRESULT res,FATFS *fs)
+{
+    /*获取剩余扇区计算剩余空间*/
+    
+    /* Get volume information and free clusters of drive 1 */
+    res = f_getfree("0:", &fre_clust, &fs);
+    if (res)
+    {
+        printf("出现错误（%d）",res);
+    }
+
+    /* Get total sectors and free sectors */
+    tot_sect = (fs->n_fatent - 2) * fs->csize;
+    fre_sect = fre_clust * fs->csize;
+     
+}
+
+
+void GetFreeSpace(FRESULT res,FATFS *fs)
+{
+    /*获取剩余扇区计算剩余空间*/
+    
+    /* Get volume information and free clusters of drive 1 */
+    res = f_getfree("0:", &fre_clust, &fs);
+    if (res)
+    {
+        printf("出现错误（%d）",res);
+    }
+
+    /* Get total sectors and free sectors */
+    tot_sect = (fs->n_fatent - 2) * fs->csize;
+    fre_sect = fre_clust * fs->csize;
+
+    /* Print the free space (assuming 512 bytes/sector) */
+    printf("总容量:  %10lu KB\n可用容量:  %10lu KB\n已用容量: %u KB\n", tot_sect / 2, fre_sect / 2, tot_sect / 2-fre_sect / 2);
+            
+}
+            
+            
+
+
+
+
+
+
+
+
 //JPEG保存
 
-void JPEG_Save(FRESULT res_sd,FIL fnew,UINT fnum)
+void JPEG_Save()
 {
-
-    FRESULT res;
-    FATFS *fs;
-    DWORD fre_clust, fre_sect, tot_sect;
-	u32 i,jpgstart,jpglen; 
-	u8 headok=0;
-    char TimeTemp[100],DateTemp[100];
+    FATFS *fs;													/* FatFs文件系统对象 */
+    FIL fnew;													/* 文件对象 */
+    FRESULT res_sd;                /* 文件操作结果 */
+    UINT fnum;   
+    u32 i,jpgstart,jpglen; 
     u8 *p;
-    u8 name_buf[1000];
+    u8 headok=0;
+    u8 name_buf[50];
+    char TimeTemp[20],DateTemp[20];
     RTC_TimeTypeDef RTC_TimeStructure;
     RTC_DateTypeDef RTC_DateStructure;
     
@@ -75,28 +127,42 @@ void JPEG_Save(FRESULT res_sd,FIL fnew,UINT fnum)
 		
     DCMI_Start(); 		//启动传输
     
-	while(1)
-    {
+    
+    
 
+    while(1)
+    {
         if(jpeg_data_ok == 1)	//已经采集完一帧图像了
         {
-            
             p = (u8*)jpeg_buf;
             
+            GetFreeSpace(res_sd,fs);
+
+            if((tot_sect/2-fre_sect/2)>50000)        //判断容量是否足
+            {
+                printf("容量不足,需要删除\n");
+                FindOldestFile(fs,"0:");
+                continue;
+            }
             
+            
+
             /*获取当前日期时间*/
             RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
             sprintf(DateTemp,"20%0.2d-%0.2d-%0.2d", 
-			RTC_DateStructure.RTC_Year,
-			RTC_DateStructure.RTC_Month, 
-			RTC_DateStructure.RTC_Date);
+                RTC_DateStructure.RTC_Year,
+                RTC_DateStructure.RTC_Month, 
+                RTC_DateStructure.RTC_Date);
             
             //void RTC_GetTime(uint32_t RTC_Format, RTC_TimeTypeDef* RTC_TimeStruct)
             RTC_GetTime(RTC_Format_BIN,&RTC_TimeStructure);
             sprintf(TimeTemp,"%0.2d-%0.2d-%0.2d", 
-			RTC_TimeStructure.RTC_Hours, 
-			RTC_TimeStructure.RTC_Minutes, 
-			RTC_TimeStructure.RTC_Seconds);
+                RTC_TimeStructure.RTC_Hours, 
+                RTC_TimeStructure.RTC_Minutes, 
+                RTC_TimeStructure.RTC_Seconds);
+            
+            sprintf((char *)name_buf,"%s.%s(%d).jpg",DateTemp,TimeTemp,jpg_cnt++);
+            puts((char *)name_buf);
             
             /*找头尾，记录长度*/
             jpglen=0;	//设置jpg文件大小为0
@@ -115,28 +181,11 @@ void JPEG_Save(FRESULT res_sd,FIL fnew,UINT fnum)
                 }
             }
             
-            /*获取剩余扇区计算剩余空间*/
-            sprintf((char *)name_buf,"%s---%s.jpg",DateTemp,TimeTemp);
-            puts((char *)name_buf);
-            
-            /* Get volume information and free clusters of drive 1 */
-            res = f_getfree("0:", &fre_clust, &fs);
-            if (res)
-            {
-                printf("出现错误（%d）",res);
-            }
-
-            /* Get total sectors and free sectors */
-            tot_sect = (fs->n_fatent - 2) * fs->csize;
-            fre_sect = fre_clust * fs->csize;
-
-            /* Print the free space (assuming 512 bytes/sector) */
-            printf("%10lu KiB total drive space.\n%10lu KiB available.\n", tot_sect / 2, fre_sect / 2);
-            
             /*保存数据部分*/
             p+=jpgstart;			//偏移到0XFF,0XD8处
-            if(jpglen)	//正常的jpeg数据 
+            if(jpglen)	//正常的jpeg数据
             {
+//                printf("%d",jpglen);
                 res_sd = f_open(&fnew,(const TCHAR *)name_buf,FA_CREATE_ALWAYS | FA_WRITE);     //打开文件
                 if ( res_sd == FR_OK )
                 {
@@ -145,7 +194,7 @@ void JPEG_Save(FRESULT res_sd,FIL fnew,UINT fnum)
                     res_sd=f_write(&fnew,p,sizeof(u8)*jpglen,&fnum);
                     if(res_sd==FR_OK)
                     {
-                        printf("写入完成:(%d)\n",res_sd);
+                            printf("写入完成:(%d)\n",res_sd);
                     }
                     else
                     {
@@ -159,10 +208,11 @@ void JPEG_Save(FRESULT res_sd,FIL fnew,UINT fnum)
                     printf("！！打开/创建文件失败。\r\n");
                 }
             }
-            jpeg_data_ok = 2;	//标记jpeg数据处理完了,可以让DMA去采集下一帧了.
-            delay_ms(1000);
+                jpeg_data_ok = 2;	//标记jpeg数据处理完了,可以让DMA去采集下一帧了.
+    //			delay_ms(100);
         }
     }
+	
 }
 
 
