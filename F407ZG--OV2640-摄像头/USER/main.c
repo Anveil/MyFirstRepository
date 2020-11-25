@@ -22,10 +22,9 @@
 
 
 
-
+extern volatile u8 jpeg_data_ok;
 extern u8 ov_frame;  						//帧率
 extern uint8_t Key_Flag;//按键键值
-u8 Com1SendFlag;//串口1发送数据标记
 
 
 
@@ -62,9 +61,8 @@ int main(void)
     FATFS *fs;													/* FatFs文件系统对象 */
     FIL fnew;													/* 文件对象 */
     FRESULT res_sd;                /* 文件操作结果 */
-    UINT fnum;            					  /* 文件成功读写数量 */
     
-    
+    char ** rootDirName;
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);//设置系统中断优先级分组2
     delay_init(168);  //初始化延时函数
@@ -75,6 +73,7 @@ int main(void)
     
     LED_Init();					//初始化LED
     KEY_Init();					//按键初始化
+    
     res_sd = f_mount(fs,"0:",1);//挂载文件系统
 
     TIM3_Int_Init(10000 - 1, 84 - 1); //设置定时器的定时频率为10ms  1秒钟中断100次
@@ -110,32 +109,24 @@ int main(void)
     {
         printf("》文件系统挂载成功，可以进行读写测试\r\n");
     }
-        while(OV2640_Init())//初始化OV2640
+    while(OV2640_Init())//初始化OV2640
     {
         printf("OV2640初始化失败");
     }
 	printf("OV2640初始化成功\n");
     
+    JpegInit();
+    
     OV2640_LED_light=0;//打开补光LED
-//    FindOldestFile(fs,"0:");
+
     
-    DeleteAllFiles("0:");
-    JPEG_Save();
-//    while(1)
-//    {
-//        switch(sys_status)
-//        {
-//            case DELETE_MODE:
-//                f_del_oldestfile("0:");
-//                break;
-//            case PHOTO_MODE:
-//                
-//                break;
-//            default:
-//                printf("信号量错误");
-//                while(1);
-//        }
-//        
-//    }
-    
+    while(1)	//已经采集完一帧图像了
+    {
+        if(jpeg_data_ok == 1)
+        {
+            SaveJpeg(fs,&fnew);
+        }
+
+    }
+
 }

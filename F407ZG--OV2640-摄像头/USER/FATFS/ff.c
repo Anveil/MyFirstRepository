@@ -462,6 +462,7 @@ FRESULT FindOldestFile(FATFS *fs,TCHAR *path)
 #else
         sprintf((char*)file, "%s/%s", path, fno.fname);
 #endif
+        if(fno.lfname[0]=='s')      continue;
         sprintf((char*)filename, "%s%s/%s","删除文件:\n", path, (*fno.lfname) ? fno.lfname : fno.fname);
         puts(filename);
         f_unlink(file);
@@ -478,22 +479,14 @@ FRESULT FindOldestFile(FATFS *fs,TCHAR *path)
 
 
 
-
-//====================================================================================================
-//函 数 名 : f_del_oldestfile
-//函数功能 : 
-//输    入 : 
-//输    出 : 无
-//备    注 : f_del_oldestfile 函数用来移除一个文件夹及其子文件夹、子文件，但不能移除已经打开的对象。 
-//====================================================================================================
-FRESULT DeleteAllFiles(TCHAR *path)
+char * GetDirNameToDel(TCHAR *path)
 {
 	FATFS *fs;
     FRESULT res;
     DIR   dir;     /* 文件夹对象 */ //36  bytes
     FILINFO fno;   /* 文件属性 */   //32  bytes
-    TCHAR file[_MAX_LFN + 2] = {0};
-    TCHAR filename[100];
+    static TCHAR file[_MAX_LFN + 2] = {0};
+    static TCHAR filename[100];
 #if _USE_LFN
     TCHAR lname[_MAX_LFN + 2] = {0};
 #endif
@@ -515,16 +508,25 @@ FRESULT DeleteAllFiles(TCHAR *path)
 #else
         sprintf((char*)file, "%s/%s", path, fno.fname);
 #endif
-        sprintf((char*)filename, "%s%s/%s\n","删除文件:", path, (*fno.lfname) ? fno.lfname : fno.fname);
-        puts(filename);
-        f_unlink(file);
+//        sprintf((char*)filename, "%s%s/%s\n","删除文件:", path, (*fno.lfname) ? fno.lfname : fno.fname);
+//        puts(file);
+//        f_unlink(file);
         
     }
     
-    
-    return res;
+    return file;
 }
 
+
+
+
+void GetRootDir(char ** rootDir)
+{
+
+    //打开文件夹
+    
+    
+}
 
 
 
@@ -583,18 +585,19 @@ FRESULT f_deldir(const TCHAR *path)
 #else
         sprintf((char*)file, "%s/%s", path, fno.fname);
 #endif
-        if (fno.fattrib & AM_DIR)
-        {//若是文件夹，递归删除
-            res = f_deldir(file);
-        }
-        else
-        {//若是文件，直接删除
-            res = f_unlink(file);
-        }
+            printf("删除:%s\n",file);
+
+        
+        res = f_unlink(file);
+
     }
     
     //删除本身
-    if(res == FR_OK)    res = f_unlink(path);
+    if(res == FR_OK)    
+    {
+        printf("删除%s\n",path);
+        res = f_unlink(path);
+    }
     
     return res;
 }

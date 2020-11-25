@@ -49,23 +49,23 @@ void TIM3_Int_Init(u16 arr,u16 psc)
 
 extern u8 Com1SendFlag;//串口1发送数据标记
 
-u8  TimeS;//计数延时 1S
+u32  TimeS;//计数延时 1S
 
 //定时器3中断服务函数
 void TIM3_IRQHandler(void)
 {
 	if(TIM_GetITStatus(TIM3,TIM_IT_Update)==SET) //溢出中断
 	{
+        FRESULT res;
+        FATFS *fs;
 		TimeS++;
-		if(TimeS>=100)
+		if(TimeS>=1000)
 		{
 			TimeS=0;
             jpg_cnt=0;
-	  	LED1=!LED1;//DS1翻转
-			if(Com1SendFlag!=1)Com1SendFlag=1;  //设置串口定时发送标记
+            GetFreeSpace(res,fs);
+            LED1=!LED1;//DS1翻转
 		}
-		
-		KEY_Scan();//按键扫描函数	
 	}
 	TIM_ClearITPendingBit(TIM3,TIM_IT_Update);  //清除中断标志位
 }

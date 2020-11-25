@@ -13,9 +13,11 @@ extern DWORD fre_clust, fre_sect, tot_sect;
 extern TCHAR sys_status;
 
 
+
+void JpegInit(void);
 void GetFreeSpaceNoPrint(FRESULT res,FATFS *fs);
 void GetFreeSpace(FRESULT res,FATFS *fs);
-void JPEG_Data_Process(void);
-void JPEG_Save(void);
+void JpegSaveHandler(void);
+void SaveJpeg(FATFS *fs,FIL *fnew);
 
 #endif

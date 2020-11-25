@@ -51,3 +51,4 @@
 ..\obj\jpeg.o: ..\HARDWARE\DCMI\dcmi.h
 ..\obj\jpeg.o: .\RTC\bsp_rtc.h
 ..\obj\jpeg.o: jpeg\jpeg.h
+..\obj\jpeg.o: E:\Keil5\ARM\ARMCC\Bin\..\include\string.h
