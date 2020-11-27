@@ -168,7 +168,7 @@ DRESULT disk_write (
 		    return res;
 			}		
 		
-			SD_state=SD_WriteMultiBlocks((uint8_t *)buff,sector*SD_BLOCKSIZE,SD_BLOCKSIZE,count);
+			SD_state=SD_WriteMultiBlocks((uint8_t *)buff,(unsigned long int)sector*SD_BLOCKSIZE,SD_BLOCKSIZE,count);
 			if(SD_state==SD_OK)
 			{
 				/* Check if the Transfer is finished */
