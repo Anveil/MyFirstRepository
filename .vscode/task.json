@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+            "label": "compile",
+            "command": "g++",
+            "args":[
+                "-g" ,"${fileBasename}",    
+                "-fexec-charset=GBK",       //Console窗体输出字符编码 保证能正常显示中文
+                "-finput-charset=UTF-8",
+                "-std=c++17",
+                "-static-libgcc",
+                "-fexec-charset=GBK"
+                ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
